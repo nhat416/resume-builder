@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: resume-builder-ingress
+  namespace: resume-builder
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: resume.example.com  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: resume-builder
+                port:
+                  number: 80

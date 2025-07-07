@@ -1,0 +1,24 @@
+# Ignore dependencies
+node_modules
+
+# Ignore logs and build artifacts
+npm-debug.log*
+.next
+
+# Ignore Docker
+Dockerfile
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Environment files
+.env*
+
+# IDE directories
+.vscode
+
+# Test coverage and dist
+coverage
+dist

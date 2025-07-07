@@ -1,0 +1,71 @@
+// SQLite schema for Resume Builder
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Resume {
+  id             Int           @id @default(autoincrement())
+  headline       String        @default("")
+  summary        String        @default("")
+  fullName       String        @default("")
+  email          String        @default("")
+  phone          String        @default("")
+  profilePic     String        @default("")
+  experiences    Experience[]  @relation("ResumeExperiences")
+  education      Education[]   @relation("ResumeEducation")
+  skills         Skill[]       @relation("ResumeSkills")
+  projects       Project[]     @relation("ResumeProjects")
+  certifications Certification[] @relation("ResumeCertifications")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Experience {
+  id        Int     @id @default(autoincrement())
+  resume    Resume  @relation("ResumeExperiences", fields: [resumeId], references: [id])
+  resumeId  Int
+  company   String
+  role      String
+  start     String
+  end       String
+  details   String
+}
+
+model Education {
+  id           Int     @id @default(autoincrement())
+  resume       Resume  @relation("ResumeEducation", fields: [resumeId], references: [id])
+  resumeId     Int
+  institution  String
+  degree       String
+  start        String
+  end          String
+}
+
+model Skill {
+  id        Int     @id @default(autoincrement())
+  resume    Resume  @relation("ResumeSkills", fields: [resumeId], references: [id])
+  resumeId  Int
+  name      String
+}
+
+model Project {
+  id          Int     @id @default(autoincrement())
+  resume      Resume  @relation("ResumeProjects", fields: [resumeId], references: [id])
+  resumeId    Int
+  name        String
+  description String
+}
+
+model Certification {
+  id        Int     @id @default(autoincrement())
+  resume    Resume  @relation("ResumeCertifications", fields: [resumeId], references: [id])
+  resumeId  Int
+  name      String
+  issuer    String
+  date      String
+}
