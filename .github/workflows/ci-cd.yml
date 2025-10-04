@@ -48,13 +48,7 @@ jobs:
           echo "$TAGS" | tr ' ' '\n' > /tmp/tags.txt
 
           # create a JSON array of fully-qualified tags for buildx
-          TAG_JSON=$(python - "${IMAGE}" <<PY
-import json,sys
-image=sys.argv[1]
-tags=[l.strip() for l in open('/tmp/tags.txt') if l.strip()]
-print(json.dumps([f"{image}:{t}" for t in tags]))
-PY
-)
+          TAG_JSON=$(python -c "import json,sys; image='${IMAGE}'; tags=[l.strip() for l in open('/tmp/tags.txt') if l.strip()]; print(json.dumps([f'{image}:{t}' for t in tags]))")
 
           echo "tag_list_json<<EOF" >> $GITHUB_OUTPUT
           echo "$TAG_JSON" >> $GITHUB_OUTPUT
