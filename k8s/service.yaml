@@ -4,7 +4,7 @@ metadata:
   name: resume-builder
   namespace: resume-builder
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: resume-builder
   ports:

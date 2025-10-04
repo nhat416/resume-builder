@@ -10,6 +10,11 @@ RUN npm ci
 FROM deps AS builder
 WORKDIR /app
 COPY . .
+ARG APP_VERSION=""
+# If APP_VERSION was provided during build, update package.json version before building.
+RUN if [ -n "$APP_VERSION" ]; then \
+      APP_VERSION="$APP_VERSION" node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.version=process.env.APP_VERSION;fs.writeFileSync('package.json',JSON.stringify(p,null,2));"; \
+    fi
 # Generate Prisma client
 RUN npx prisma generate
 # Build Next.js app
