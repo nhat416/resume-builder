@@ -47,14 +47,18 @@ jobs:
           mkdir -p /tmp
           echo "$TAGS" | tr ' ' '\n' > /tmp/tags.txt
 
-          # create a JSON array of fully-qualified tags for buildx using python
-          TAG_JSON=$(python - <<'PY'
-import json,sys
-image=sys.argv[1]
-tags=sys.argv[2].split()
-print(json.dumps([f"{image}:{t}" for t in tags]))
-PY
-          "$IMAGE" "$TAGS")
+          # create a JSON array of fully-qualified tags for buildx using pure bash
+          TAG_JSON='['
+          FIRST=true
+          while IFS= read -r t; do
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              TAG_JSON+="," 
+            fi
+            TAG_JSON+="\"${IMAGE}:${t}\""
+          done < /tmp/tags.txt
+          TAG_JSON+=']'
 
           echo "tag_list_json=$TAG_JSON" >> $GITHUB_OUTPUT
 
