@@ -30,20 +30,23 @@ jobs:
       - name: Set image tags
         id: set-tags
         run: |
-          echo "IMAGE=nhat416/resume-builder" >> $GITHUB_ENV
+          IMAGE=nhat416/resume-builder
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
           # always push commit SHA tag
-          TAGS="${{ github.sha }}"
+          TAGS="$GITHUB_SHA"
           # if on main branch, add 'latest'
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
             TAGS="$TAGS\nlatest"
           fi
           # if this is a tag push, add the tag name (semantic version)
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             REF_NAME=${GITHUB_REF#refs/tags/}
             TAGS="$TAGS\n${REF_NAME}"
           fi
-          # write newline-separated tags into TAG_LIST env
-          echo -e "TAG_LIST=$TAGS" >> $GITHUB_ENV
+          # write tags to step output (supports multiline)
+          echo "tag_list<<EOF" >> $GITHUB_OUTPUT
+          printf "%s\n" "$TAGS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Compute build version
         id: version
@@ -61,7 +64,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.IMAGE }}:${{ env.TAG_LIST }}
+          tags: ${{ env.IMAGE }}:${{ steps.set-tags.outputs.tag_list }}
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
 
