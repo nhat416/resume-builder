@@ -62,7 +62,7 @@ jobs:
 
           echo "tag_list_json=$TAG_JSON" >> $GITHUB_OUTPUT
 
-      - name: Debug: show computed tag list and environment
+      - name: Debug show computed tag list and environment
         run: |
           echo "GITHUB_REF=$GITHUB_REF"
           echo "GITHUB_SHA=$GITHUB_SHA"
@@ -71,17 +71,8 @@ jobs:
           echo '${{ steps.set-tags.outputs.tag_list_json }}'
           echo "--- parsed tags ---"
           python - <<PY
-import json,sys
-s = '''${{ steps.set-tags.outputs.tag_list_json }}'''
-try:
-    js = json.loads(s)
-    for t in js:
-        print('-', t)
-except Exception as e:
-    print('failed to parse tag_list_json:', e)
-PY
 
-      - name: Debug: docker and buildx info
+      - name: Debug docker and buildx info
         run: |
           docker --version || true
           docker buildx version || true
@@ -106,20 +97,6 @@ PY
           TAGS_JSON='${{ steps.set-tags.outputs.tag_list_json }}'
           # use python to parse JSON and print each tag
           for t in $(python - <<PY
-import json,sys
-js = json.loads(sys.argv[1])
-for v in js:
-    print(v)
-PY
-"$TAGS_JSON"); do
-            TAG_FLAGS="$TAG_FLAGS --tag $t"
-          done
-
-          docker buildx build --builder default \
-            --platform linux/amd64,linux/arm64 \
-            --build-arg APP_VERSION="${{ env.APP_VERSION }}" \
-            $TAG_FLAGS \
-            --push .
 
       - name: Configure kubeconfig
         run: |
