@@ -43,9 +43,16 @@ jobs:
             REF_NAME=${GITHUB_REF#refs/tags/}
             TAGS="$TAGS\n${REF_NAME}"
           fi
+          # prefix each tag with the image name to form full tag references
+          TAGS_FULL=""
+          while IFS= read -r t; do
+            TAGS_FULL="$TAGS_FULL${IMAGE}:$t\n"
+          done <<EOF
+$TAGS
+EOF
           # write tags to step output (supports multiline)
           echo "tag_list<<EOF" >> $GITHUB_OUTPUT
-          printf "%s\n" "$TAGS" >> $GITHUB_OUTPUT
+          printf "%b" "$TAGS_FULL" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Compute build version
@@ -64,7 +71,7 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
-          tags: ${{ env.IMAGE }}:${{ steps.set-tags.outputs.tag_list }}
+          tags: ${{ steps.set-tags.outputs.tag_list }}
           build-args: |
             APP_VERSION=${{ env.APP_VERSION }}
 
