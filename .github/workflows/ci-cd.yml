@@ -32,27 +32,36 @@ jobs:
         run: |
           IMAGE=nhat416/resume-builder
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
-          # always push commit SHA tag
+          # build simple newline-separated tag list (short tags)
           TAGS="$GITHUB_SHA"
-          # if on main branch, add 'latest'
           if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
             TAGS="$TAGS\nlatest"
           fi
-          # if this is a tag push, add the tag name (semantic version)
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             REF_NAME=${GITHUB_REF#refs/tags/}
             TAGS="$TAGS\n${REF_NAME}"
           fi
-          # prefix each tag with the image name to form full tag references
-          TAGS_FULL=""
+
+          # create a JSON array of fully-qualified tags for buildx
+          FIRST=true
+          echo "tag_list_json<<EOF" >> $GITHUB_OUTPUT
+          printf '['
           while IFS= read -r t; do
-            TAGS_FULL="$TAGS_FULL${IMAGE}:$t\n"
+            if [ "$FIRST" = true ]; then
+              FIRST=false
+            else
+              printf ','
+            fi
+            # escape t just in case
+            esc=$(printf '%s' "$t" | python -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')
+            # esc includes surrounding quotes, remove them
+            esc=${esc#"}
+            esc=${esc%"}
+            printf '"%s:%s"' "$IMAGE" "$esc"
           done <<EOF
 $TAGS
 EOF
-          # write tags to step output (supports multiline)
-          echo "tag_list<<EOF" >> $GITHUB_OUTPUT
-          printf "%b" "$TAGS_FULL" >> $GITHUB_OUTPUT
+          printf ']\n'
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Compute build version
@@ -66,14 +75,28 @@ EOF
           echo "APP_VERSION=$APP_VERSION" >> $GITHUB_ENV
 
       - name: Build and push Docker image (multi-arch)
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.set-tags.outputs.tag_list }}
-          build-args: |
-            APP_VERSION=${{ env.APP_VERSION }}
+        run: |
+          set -euxo pipefail
+          # prepare tag flags
+          TAG_FLAGS=""
+          # read JSON array of tags from step output
+          TAGS_JSON='${{ steps.set-tags.outputs.tag_list_json }}'
+          # use python to parse JSON and print each tag
+          for t in $(python - <<PY
+import json,sys
+js = json.loads(sys.argv[1])
+for v in js:
+    print(v)
+PY
+"$TAGS_JSON"); do
+            TAG_FLAGS="$TAG_FLAGS --tag $t"
+          done
+
+          docker buildx build --builder default \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg APP_VERSION="${{ env.APP_VERSION }}" \
+            $TAG_FLAGS \
+            --push .
 
       - name: Configure kubeconfig
         run: |
