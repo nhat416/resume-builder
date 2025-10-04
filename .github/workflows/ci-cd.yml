@@ -33,36 +33,31 @@ jobs:
         run: |
           IMAGE=nhat416/resume-builder
           echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
-          # build simple newline-separated tag list (short tags)
+          # build whitespace-separated tag list (short tags)
           TAGS="$GITHUB_SHA"
           if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-            TAGS="$TAGS\nlatest"
+            TAGS="$TAGS latest"
           fi
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             REF_NAME=${GITHUB_REF#refs/tags/}
-            TAGS="$TAGS\n${REF_NAME}"
+            TAGS="$TAGS ${REF_NAME}"
           fi
 
+          # write tags to a temp file, one per line
+          mkdir -p /tmp
+          echo "$TAGS" | tr ' ' '\n' > /tmp/tags.txt
+
           # create a JSON array of fully-qualified tags for buildx
-          FIRST=true
+          TAG_JSON=$(python - "${IMAGE}" <<PY
+import json,sys
+image=sys.argv[1]
+tags=[l.strip() for l in open('/tmp/tags.txt') if l.strip()]
+print(json.dumps([f"{image}:{t}" for t in tags]))
+PY
+)
+
           echo "tag_list_json<<EOF" >> $GITHUB_OUTPUT
-          printf '['
-          while IFS= read -r t; do
-            if [ "$FIRST" = true ]; then
-              FIRST=false
-            else
-              printf ','
-            fi
-            # escape t just in case
-            esc=$(printf '%s' "$t" | python -c 'import json,sys;print(json.dumps(sys.stdin.read().strip()))')
-            # esc includes surrounding quotes, remove them
-            esc=${esc#"}
-            esc=${esc%"}
-            printf '"%s:%s"' "$IMAGE" "$esc"
-          done <<EOF
-$TAGS
-EOF
-          printf ']\n'
+          echo "$TAG_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Debug: show computed tag list and environment
