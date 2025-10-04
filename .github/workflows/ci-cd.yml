@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
     tags: ['v*']
+  workflow_dispatch: {}
 
 jobs:
   build-and-deploy:
@@ -63,6 +64,31 @@ $TAGS
 EOF
           printf ']\n'
           echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Debug: show computed tag list and environment
+        run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "GITHUB_SHA=$GITHUB_SHA"
+          echo "IMAGE=${IMAGE}"
+          echo "--- raw tag_list_json ---"
+          echo '${{ steps.set-tags.outputs.tag_list_json }}'
+          echo "--- parsed tags ---"
+          python - <<PY
+import json,sys
+s = '''${{ steps.set-tags.outputs.tag_list_json }}'''
+try:
+    js = json.loads(s)
+    for t in js:
+        print('-', t)
+except Exception as e:
+    print('failed to parse tag_list_json:', e)
+PY
+
+      - name: Debug: docker and buildx info
+        run: |
+          docker --version || true
+          docker buildx version || true
+          docker info || true
 
       - name: Compute build version
         id: version
