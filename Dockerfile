@@ -23,7 +23,6 @@ RUN npm run build
 # Stage 3: Production image
 FROM node:18-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production
 
 # Copy dependencies and build output
 COPY --from=builder /app/package.json ./package.json
