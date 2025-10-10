@@ -68,7 +68,7 @@ export default function Home() {
           v{version}
         </div>
       )}
-        <h1 className="text-2xl font-bold mb-4">Resume Builder v0.1.2</h1>
+        <h1 className="text-2xl font-bold mb-4">Resume Builder v{version}</h1>
       <h1 className="text-2xl font-bold mb-4">Resumes</h1>
       <ul className="list-disc pl-5 mb-6">
         {list.map(r => (
