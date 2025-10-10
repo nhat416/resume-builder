@@ -4,7 +4,7 @@ metadata:
   name: resume-builder
   namespace: resume-builder
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: resume-builder
   ports:
